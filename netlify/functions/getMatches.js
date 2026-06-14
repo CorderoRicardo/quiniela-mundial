@@ -75,7 +75,7 @@ export const handler = async (event, context) => {
     // 4. Cargar los datos a Redis. 
     // Usamos 'ex: 3600' para que el TTL sea de 1 hora.
     // Durante el mundial, podrías bajar este TTL a 300 (5 minutos) para mayor inmediatez.
-    await redis.set(REDIS_KEY, formattedData, { ex: 3600 })
+    await redis.set(REDIS_KEY, formattedData, { ex: 1800 })
 
     return {
       statusCode: 200,

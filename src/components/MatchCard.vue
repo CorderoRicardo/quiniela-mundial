@@ -5,7 +5,7 @@ const props = defineProps({
   matchId: { type: [String, Number], required: true },
   match: { type: Object, required: true },
   currentPrediction: { type: String, default: '' },
-  show: { type: Boolean, default: false}
+  show: { type: Boolean, default: true},
 })
 
 const emit = defineEmits(['selection-changed'])
@@ -22,11 +22,10 @@ const onSelection = () => {
   })
 }
 
-// Función nativa para formatear el Timestamp UNIX a hora de CDMX
 const formatCDMXTime = (unixTimestamp) => {
   if (!unixTimestamp) return 'Fecha por definir'
   
-  const date = new Date(unixTimestamp * 1000) // Multiplicamos por 1000 para ms
+  const date = new Date(unixTimestamp * 1000)
   
   return new Intl.DateTimeFormat('es-MX', {
     timeZone: 'America/Mexico_City',
@@ -40,7 +39,7 @@ const formatCDMXTime = (unixTimestamp) => {
 </script>
 
 <template>
-  <div class="match-card" v-if="show">
+  <div class="match-card" :class="{ 'has-selection': selectedOption }" v-if="show">
     
     <div class="match-meta">
       <span class="group-badge">{{ match.group }}</span>
@@ -57,13 +56,17 @@ const formatCDMXTime = (unixTimestamp) => {
       <div class="team home">
         <span class="name">{{ match.home_team }}</span>
         <img v-if="match.home_crest" :src="match.home_crest" class="flag" :alt="match.home_team">
-        <span class="score" v-if="match.status === 'FINISHED'">{{ match.home_goals }}</span>
+        <span class="score" v-if="match.status === 'FINISHED' || match.status === 'IN_PLAY'">
+          {{ match.home_goals ?? 0 }}
+        </span>
       </div>
       
       <span class="vs">vs</span>
       
       <div class="team away">
-        <span class="score" v-if="match.status === 'FINISHED'">{{ match.away_goals }}</span>
+        <span class="score" v-if="match.status === 'FINISHED' || match.status === 'IN_PLAY'">
+          {{ match.away_goals ?? 0 }}
+        </span>
         <img v-if="match.away_crest" :src="match.away_crest" class="flag" :alt="match.away_team">
         <span class="name">{{ match.away_team }}</span>
       </div>
@@ -93,14 +96,21 @@ const formatCDMXTime = (unixTimestamp) => {
   border-radius: 12px;
   background-color: #ffffff;
   box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-  transition: transform 0.2s;
+  transition: all 0.3s ease; /* Transición suave para el sombreado */
 }
+
 .match-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 12px rgba(0,0,0,0.1);
 }
 
-/* Estilos de los nuevos metadatos */
+/* 3. NUEVO: Estilo visual para tarjeta seleccionada (sombreado inset) */
+.match-card.has-selection {
+  box-shadow: inset 0 0 12px rgba(75, 211, 13, 0.90); /* Sombreado interior sutil */
+  border-color: #a5d6a7; /* Borde verde claro para resaltar */
+  background-color: #fcfdfc; /* Fondo ligeramente tintado */
+}
+
 .match-meta {
   display: flex;
   justify-content: space-between;
@@ -144,7 +154,6 @@ const formatCDMXTime = (unixTimestamp) => {
 .team.home { justify-content: flex-end; }
 .team.away { justify-content: flex-start; }
 
-/* Estilo para las banderas SVG */
 .flag {
   width: 30px;
   height: 20px;
@@ -153,6 +162,7 @@ const formatCDMXTime = (unixTimestamp) => {
   border: 1px solid #eee;
 }
 
+/* Modificado ligeramente el marcador para que se vea bien en partidos activos */
 .score {
   background-color: #333;
   color: white;
@@ -160,6 +170,13 @@ const formatCDMXTime = (unixTimestamp) => {
   border-radius: 6px;
   font-weight: bold;
   font-size: 1.2rem;
+  min-width: 20px;
+  text-align: center;
+}
+
+/* El marcador es verde si está en juego */
+.status.in-play + .teams .score {
+  background-color: #2e7d32;
 }
 
 .vs {

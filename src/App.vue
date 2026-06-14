@@ -83,21 +83,14 @@ const importJSON = (importedData) => {
 <template>
   <main class="container">
     <header class="header">
-      <div class="title-container">
-        <h1>Quiniela Mundial 2026</h1>
-        <button class="info-btn" @click="showLastUpdated" title="Ver última actualización">
-          ℹ️ Info
-        </button>
-      </div>
-      
-      <div class="score-board">
-        Puntos: <strong>{{ totalScore }}</strong>
-      </div>
+      <h1>Quiniela Mundial 2026</h1>
     </header>
     
     <p class="subtitle">Selecciona tus pronósticos para la fase de grupos.</p>
     
     <ActionPanel 
+      :score="totalScore"
+      @show-info="showLastUpdated"
       @export-predictions="exportJSON"
       @import-predictions="importJSON"
     />
@@ -111,7 +104,6 @@ const importJSON = (importedData) => {
 </template>
 
 <style scoped>
-/* Conserva tus estilos existentes de .container, .header, .score-board... */
 .container {
   max-width: 800px;
   margin: 0 auto;
@@ -120,36 +112,19 @@ const importJSON = (importedData) => {
 }
 .header {
   display: flex;
-  justify-content: space-between;
+  justify-content: center; /* Centramos el título */
   align-items: center;
   border-bottom: 2px solid #eee;
   padding-bottom: 1rem;
 }
-.title-container {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-.score-board {
-  font-size: 1.5rem;
-  background-color: #ffeb3b;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
+h1 {
+  margin: 0;
+  color: #2c3e50;
 }
 .subtitle {
   margin-top: 1rem;
-}
-.info-btn {
-  background: none;
-  border: 1px solid #ccc;
-  border-radius: 20px;
-  padding: 0.2rem 0.8rem;
-  font-size: 0.9rem;
-  cursor: pointer;
-  background-color: #f5f5f5;
-  transition: all 0.2s;
-}
-.info-btn:hover {
-  background-color: #e0e0e0;
+  text-align: center;
+  color: #666;
+  margin-bottom: 2rem;
 }
 </style>

@@ -3,23 +3,26 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import MatchList from './components/MatchList.vue'
 import ActionPanel from './components/ActionPanel.vue'
 
-// 1. Ahora inicializamos matchesData como un Array vacío [] en lugar de {}
 const matchesData = ref([])
 const userPredictions = reactive({})
+// NUEVA: Variable para almacenar la fecha del caché
+const lastCacheUpdate = ref(null) 
 
 onMounted(async () => {
   try {
     const response = await fetch('/.netlify/functions/getMatches')
     const data = await response.json()
-    matchesData.value = data
+    
+    // Asignamos el array de partidos que ahora viene dentro de 'data.matches'
+    matchesData.value = data.matches
+    // Guardamos la fecha de la caché en el estado global
+    lastCacheUpdate.value = data.cache_date
   } catch (error) {
     console.error("Error obteniendo los resultados:", error)
   }
 })
 
 const sortedMatches = computed(() => {
-  // 2. Como ya es un Array, ya no necesitamos Object.entries. 
-  // Clonamos el array con [...matchesData.value] para no mutar el original y lo ordenamos.
   return [...matchesData.value].sort((a, b) => {
     if (a.group < b.group) return -1;
     if (a.group > b.group) return 1;
@@ -30,9 +33,7 @@ const sortedMatches = computed(() => {
 const totalScore = computed(() => {
   let points = 0
   for (const predictionId in userPredictions) {
-    // 3. En lugar de acceso directo por índice, buscamos el partido por su match_id
     const match = matchesData.value.find(m => m.match_id === predictionId)
-    
     if (match && match.status === 'FINISHED' && userPredictions[predictionId] === match.result) {
       points++
     }
@@ -40,18 +41,26 @@ const totalScore = computed(() => {
   return points
 })
 
+const handlePredictionUpdate = ({ matchId, prediction }) => {
+  userPredictions[matchId] = prediction
+}
+
+// NUEVO: Función actualizada para la alerta
 const showLastUpdated = () => {
-  // 4. Extraemos el primer elemento directamente del array
-  const firstMatch = matchesData.value[0]
-  if (firstMatch && firstMatch.last_updated) {
-    const date = new Date(firstMatch.last_updated)
+  if (lastCacheUpdate.value) {
+    // 1. Formatear la fecha del caché a CDMX
+    const date = new Date(lastCacheUpdate.value)
     const formattedDate = new Intl.DateTimeFormat('es-MX', {
       timeZone: 'America/Mexico_City',
       dateStyle: 'long', 
       timeStyle: 'medium'
     }).format(date)
     
-    alert(`Última actualización de resultados reales:\n🗓️ ${formattedDate} (Tiempo de CDMX)`)
+    // 2. Contar dinámicamente cuántos partidos tienen el status 'FINISHED'
+    const finishedCount = matchesData.value.filter(match => match.status === 'FINISHED').length
+    
+    // 3. Mostrar la alerta con la nueva estructura
+    alert(`Última actualización de datos (Caché):\n🗓️ ${formattedDate} (CDMX)\n\n✅ Partidos finalizados: ${finishedCount}`)
   } else {
     alert('Información de actualización aún no disponible.')
   }

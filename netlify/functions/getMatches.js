@@ -32,7 +32,6 @@ export const handler = async (event, context) => {
     const rawData = await response.json()
 
     // 3. Transformar y normalizar los datos al contrato del frontend
-    // 1. Cambiamos las llaves {} por corchetes []
     const formattedData = []
 
     rawData.matches.forEach(match => {
@@ -72,15 +71,20 @@ export const handler = async (event, context) => {
       })
     })
 
+    const cachePayload = {
+      cache_date: new Date().toISOString(), // Fecha exacta en que se genera esta caché
+      matches: formattedData
+    }
+
     // 4. Cargar los datos a Redis. 
     // Usamos 'ex: 3600' para que el TTL sea de 1 hora.
     // Durante el mundial, podrías bajar este TTL a 300 (5 minutos) para mayor inmediatez.
-    await redis.set(REDIS_KEY, formattedData, { ex: 1800 })
+    await redis.set(REDIS_KEY, cachePayload, formattedData, { ex: 1800 })
 
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formattedData)
+      body: JSON.stringify(cachePayload) // Devolvemos el payload completo al frontend
     }
 
   } catch (error) {

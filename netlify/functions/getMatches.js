@@ -35,13 +35,18 @@ export const handler = async (event, context) => {
     const formattedData = {}
 
     rawData.matches.forEach(match => {
-      // Manejo de equipos aún no definidos en la fase de grupos
-      const homeCode = match.homeTeam.tla || 'TBD'
-      const awayCode = match.awayTeam.tla || 'TBD'
-      const homeName = match.homeTeam.name || 'Por definir'
-      const awayName = match.awayTeam.name || 'Por definir'
+      const homeCode = match.homeTeam?.tla || 'TBD'
+      const awayCode = match.awayTeam?.tla || 'TBD'
+      const homeName = match.homeTeam?.name || 'Por definir'
+      const awayName = match.awayTeam?.name || 'Por definir'
+      
+      // Extraemos las banderas (crest)
+      const homeCrest = match.homeTeam?.crest || ''
+      const awayCrest = match.awayTeam?.crest || ''
 
-      // Determinar el resultado en base a los goles si el partido terminó
+      // Limpiamos el texto del grupo (ej. de "GROUP_A" a "Grupo A")
+      const groupName = match.group ? match.group.replace('GROUP_', 'Grupo ') : 'Fase Final'
+
       let resultStr = null
       if (match.status === 'FINISHED') {
         const homeGoals = match.score.fullTime.home
@@ -53,13 +58,15 @@ export const handler = async (event, context) => {
 
       formattedData[match.id] = {
         match_name: `${homeCode}_vs_${awayCode}`,
-        // football-data envía utcDate (ISO 8601), lo pasamos a UNIX timestamp en segundos
         timestamp: Math.floor(new Date(match.utcDate).getTime() / 1000),
+        group: groupName,        // <-- NUEVO
+        home_crest: homeCrest,   // <-- NUEVO
+        away_crest: awayCrest,   // <-- NUEVO
         home_team: homeName,
         away_team: awayName,
         home_goals: match.score.fullTime.home ?? null,
         away_goals: match.score.fullTime.away ?? null,
-        status: match.status, // Valores típicos: SCHEDULED, TIMED, IN_PLAY, FINISHED
+        status: match.status,
         result: resultStr
       }
     })

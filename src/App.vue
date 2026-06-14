@@ -46,6 +46,8 @@ onMounted(async () => {
     const response = await fetch('/.netlify/functions/getMatches')
     const data = await response.json()
     matchesData.value = data
+    console.log(Object.keys(data).length);
+
   } catch (error) {
     console.error("Error obteniendo los resultados:", error)
   }

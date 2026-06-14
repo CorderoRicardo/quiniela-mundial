@@ -1,39 +1,53 @@
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import MatchList from './components/MatchList.vue'
 import ActionPanel from './components/ActionPanel.vue'
 
 // Mock data: Contrato de la futura Netlify Function
-const matchesData = ref({
-  "1": {
-    "match_name": "MEX_vs_POL",
-    "timestamp": 1782259200,
-    "home_team": "México",
-    "away_team": "Polonia",
-    "home_goals": 0,
-    "away_goals": 0,
-    "status": "FINISHED",
-    "result": "Empate"
-  },
-  "2": {
-    "match_name": "ARG_vs_KSA",
-    "timestamp": 1782345600,
-    "home_team": "Argentina",
-    "away_team": "Arabia Saudita",
-    "home_goals": 1,
-    "away_goals": 2,
-    "status": "FINISHED",
-    "result": "Visitante"
-  },
-  "3": {
-    "match_name": "USA_vs_WAL",
-    "timestamp": 1782432000,
-    "home_team": "Estados Unidos",
-    "away_team": "Gales",
-    "home_goals": null,
-    "away_goals": null,
-    "status": "SCHEDULED",
-    "result": null
+// const matchesData = ref({
+//   "1": {
+//     "match_name": "MEX_vs_POL",
+//     "timestamp": 1782259200,
+//     "home_team": "México",
+//     "away_team": "Polonia",
+//     "home_goals": 0,
+//     "away_goals": 0,
+//     "status": "FINISHED",
+//     "result": "Empate"
+//   },
+//   "2": {
+//     "match_name": "ARG_vs_KSA",
+//     "timestamp": 1782345600,
+//     "home_team": "Argentina",
+//     "away_team": "Arabia Saudita",
+//     "home_goals": 1,
+//     "away_goals": 2,
+//     "status": "FINISHED",
+//     "result": "Visitante"
+//   },
+//   "3": {
+//     "match_name": "USA_vs_WAL",
+//     "timestamp": 1782432000,
+//     "home_team": "Estados Unidos",
+//     "away_team": "Gales",
+//     "home_goals": null,
+//     "away_goals": null,
+//     "status": "SCHEDULED",
+//     "result": null
+//   }
+// })
+
+// Inicializamos el objeto vacío
+const matchesData = ref({})
+
+// Al cargar el componente, llamamos a la Netlify Function
+onMounted(async () => {
+  try {
+    const response = await fetch('/.netlify/functions/getMatches')
+    const data = await response.json()
+    matchesData.value = data
+  } catch (error) {
+    console.error("Error obteniendo los resultados:", error)
   }
 })
 

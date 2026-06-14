@@ -26,3 +26,5 @@ dist-ssr
 test_results/*
 
 .env
+# Local Netlify folder
+.netlify

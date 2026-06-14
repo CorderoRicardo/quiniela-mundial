@@ -76,6 +76,7 @@ const importJSON = (importedData) => {
 
     <MatchList 
       :matches="matches" 
+      :predictions="userPredictions"
       @update-prediction="handlePredictionUpdate" 
     />
   </main>

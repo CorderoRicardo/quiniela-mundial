@@ -5,6 +5,10 @@ defineProps({
   matches: {
     type: Array,
     required: true
+  },
+  predictions: {
+    type: Object,
+    required: true
   }
 })
 
@@ -21,6 +25,7 @@ const forwardPrediction = (data) => {
       v-for="match in matches" 
       :key="match.id" 
       :match="match" 
+      :current-prediction="predictions[match.id]"
       @selection-changed="forwardPrediction"
     />
   </div>

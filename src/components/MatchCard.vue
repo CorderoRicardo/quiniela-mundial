@@ -1,17 +1,26 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 
 const props = defineProps({
   match: {
     type: Object,
     required: true
+  },
+  currentPrediction: {
+    type: String,
+    default: ''
   }
 })
 
 const emit = defineEmits(['selection-changed'])
 
-// Estado local para saber qué opción eligió el usuario en este partido
-const selectedOption = ref('')
+// Inicializamos la selección con el valor de la prop (si existe)
+const selectedOption = ref(props.currentPrediction)
+
+// Vigilamos si la prop cambia (ej. cuando se carga un JSON) para actualizar la UI
+watch(() => props.currentPrediction, (newValue) => {
+  selectedOption.value = newValue || ''
+})
 
 const onSelection = () => {
   emit('selection-changed', {

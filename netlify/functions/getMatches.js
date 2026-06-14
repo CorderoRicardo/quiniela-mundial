@@ -5,33 +5,64 @@ const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN,
 })
 
+// Definimos el TTL deseado en segundos (Ej. 3600 = 1 hora)
+const CACHE_TTL_SECONDS = 900 
+
 export const handler = async (event, context) => {
   try {
     const REDIS_KEY = 'mundial_matches_2026'
     
-    // 1. Verificar si hay datos cacheados
+    // 1. Intentar obtener el contenedor guardado en Redis
     const cachedData = await redis.get(REDIS_KEY)
     
-    if (cachedData) {
-      return {
-        statusCode: 200,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(cachedData)
+    // 2. Evaluación de la edad del caché (cache_date)
+    if (cachedData && cachedData.cache_date) {
+      const cacheTimestamp = new Date(cachedData.cache_date).getTime()
+      const currentTimestamp = new Date().getTime()
+      
+      // Calculamos el lapso transcurrido en segundos
+      const ageInSeconds = (currentTimestamp - cacheTimestamp) / 1000
+
+      // Si el lapso es menor al TTL, la caché sigue fresca, la devolvemos inmediatamente
+      if (ageInSeconds < CACHE_TTL_SECONDS) {
+        return {
+          statusCode: 200,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(cachedData)
+        }
       }
+      
+      // Si el código llega aquí, significa que ageInSeconds >= CACHE_TTL_SECONDS
+      // La caché existe pero está "caducada". Intentaremos actualizarla en el paso 3.
+      console.log(`Caché expirado (Edad: ${Math.floor(ageInSeconds)}s). Renovando...`)
     }
 
-    // 2. Extraer datos de football-data.org si no hay caché
-    const response = await fetch('https://api.football-data.org/v4/competitions/WC/matches', {
-      headers: { 'X-Auth-Token': process.env.SPORTS_API_KEY }
-    })
-
-    if (!response.ok) {
-      throw new Error(`Error en la API deportiva: ${response.status}`)
+    // 3. Extraer datos de football-data.org 
+    let response;
+    try {
+      response = await fetch('https://api.football-data.org/v4/competitions/WC/matches', {
+        headers: { 'X-Auth-Token': process.env.SPORTS_API_KEY }
+      })
+      
+      if (!response.ok) throw new Error(`Status API: ${response.status}`)
+        
+    } catch (apiError) {
+      // PATRÓN DE RESPALDO (FALLBACK): 
+      // Si la API falla pero tenemos caché caducado, devolvemos el viejo en lugar de fallar
+      console.error('La API falló, usando caché viejo como respaldo:', apiError)
+      if (cachedData) {
+        return {
+          statusCode: 200,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(cachedData)
+        }
+      }
+      throw apiError // Si no hay caché de respaldo, lanzamos el error original
     }
 
     const rawData = await response.json()
 
-    // 3. Transformar y normalizar los datos al contrato del frontend
+    // 4. Transformar y normalizar los datos al contrato del frontend
     const formattedData = []
 
     rawData.matches.forEach(match => {
@@ -39,7 +70,6 @@ export const handler = async (event, context) => {
       const awayCode = match.awayTeam?.tla || 'TBD'
       const homeName = match.homeTeam?.name || 'Por definir'
       const awayName = match.awayTeam?.name || 'Por definir'
-      
       const homeCrest = match.homeTeam?.crest || ''
       const awayCrest = match.awayTeam?.crest || ''
       const groupName = match.group ? match.group.replace('GROUP_', 'Grupo ') : 'Fase Final'
@@ -53,9 +83,8 @@ export const handler = async (event, context) => {
         else resultStr = 'Empate'
       }
 
-      // 2. Usamos .push() para insertar los objetos en el array
       formattedData.push({
-        match_id: String(match.id), // Guardamos el ID dentro del objeto
+        match_id: String(match.id),
         match_name: `${homeCode}_vs_${awayCode}`,
         timestamp: Math.floor(new Date(match.utcDate).getTime() / 1000),
         group: groupName,
@@ -71,20 +100,21 @@ export const handler = async (event, context) => {
       })
     })
 
+    // 5. Crear el contenedor con la nueva fecha
     const cachePayload = {
-      cache_date: new Date().toISOString(), // Fecha exacta en que se genera esta caché
+      cache_date: new Date().toISOString(),
       matches: formattedData
     }
 
-    // 4. Cargar los datos a Redis. 
-    // Usamos 'ex: 3600' para que el TTL sea de 1 hora.
-    // Durante el mundial, podrías bajar este TTL a 300 (5 minutos) para mayor inmediatez.
-    await redis.set(REDIS_KEY, cachePayload, formattedData, { ex: 1800 })
+    // Guardamos en Redis. 
+    // NOTA: Quitamos la propiedad '{ ex: 3600 }' para que Redis no elimine la llave físicamente,
+    // dejando que la validación manual de arriba sea la que decida cuándo actualizar y permita el respaldo.
+    await redis.set(REDIS_KEY, cachePayload)
 
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(cachePayload) // Devolvemos el payload completo al frontend
+      body: JSON.stringify(cachePayload)
     }
 
   } catch (error) {

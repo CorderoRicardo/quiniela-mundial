@@ -5,17 +5,13 @@ import ActionPanel from './components/ActionPanel.vue'
 
 const matchesData = ref([])
 const userPredictions = reactive({})
-// NUEVA: Variable para almacenar la fecha del caché
 const lastCacheUpdate = ref(null) 
 
 onMounted(async () => {
   try {
     const response = await fetch('/.netlify/functions/getMatches')
     const data = await response.json()
-    
-    // Asignamos el array de partidos que ahora viene dentro de 'data.matches'
     matchesData.value = data.matches
-    // Guardamos la fecha de la caché en el estado global
     lastCacheUpdate.value = data.cache_date
   } catch (error) {
     console.error("Error obteniendo los resultados:", error)
@@ -41,14 +37,28 @@ const totalScore = computed(() => {
   return points
 })
 
+// NUEVO: Buscamos si existe al menos un partido 'EN JUEGO'
+const inPlayMatch = computed(() => {
+  return matchesData.value.find(match => match.status === 'IN_PLAY')
+})
+
+// NUEVO: Función para desplazar la vista hacia la tarjeta
+const scrollToLiveMatch = () => {
+  if (inPlayMatch.value) {
+    const element = document.getElementById(`match-${inPlayMatch.value.match_id}`)
+    if (element) {
+      // Usamos block: 'center' para que la tarjeta quede en medio de la pantalla
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }
+}
+
 const handlePredictionUpdate = ({ matchId, prediction }) => {
   userPredictions[matchId] = prediction
 }
 
-// NUEVO: Función actualizada para la alerta
 const showLastUpdated = () => {
   if (lastCacheUpdate.value) {
-    // 1. Formatear la fecha del caché a CDMX
     const date = new Date(lastCacheUpdate.value)
     const formattedDate = new Intl.DateTimeFormat('es-MX', {
       timeZone: 'America/Mexico_City',
@@ -56,10 +66,7 @@ const showLastUpdated = () => {
       timeStyle: 'medium'
     }).format(date)
     
-    // 2. Contar dinámicamente cuántos partidos tienen el status 'FINISHED'
     const finishedCount = matchesData.value.filter(match => match.status === 'FINISHED').length
-    
-    // 3. Mostrar la alerta con la nueva estructura
     alert(`Última actualización de datos (Caché):\n🗓️ ${formattedDate} (CDMX)\n\n✅ Partidos finalizados: ${finishedCount}`)
   } else {
     alert('Información de actualización aún no disponible.')
@@ -86,6 +93,16 @@ const importJSON = (importedData) => {
 
 <template>
   <main class="container">
+    
+    <button 
+      v-if="inPlayMatch" 
+      class="floating-live-btn" 
+      @click="scrollToLiveMatch"
+      title="Ir al partido en juego"
+    >
+      🔴 En Vivo
+    </button>
+
     <header class="header">
       <h1>Quiniela Mundial 2026</h1>
     </header>
@@ -108,15 +125,17 @@ const importJSON = (importedData) => {
 </template>
 
 <style scoped>
+/* Estilos anteriores intactos */
 .container {
   max-width: 800px;
   margin: 0 auto;
   padding: 2rem;
   font-family: sans-serif;
+  position: relative; /* Ayuda como contexto para z-index */
 }
 .header {
   display: flex;
-  justify-content: center; /* Centramos el título */
+  justify-content: center;
   align-items: center;
   border-bottom: 2px solid #eee;
   padding-bottom: 1rem;
@@ -130,5 +149,44 @@ h1 {
   text-align: center;
   color: #666;
   margin-bottom: 2rem;
+}
+
+/* NUEVO: Estilos del Botón Flotante */
+.floating-live-btn {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background-color: #d32f2f;
+  color: white;
+  border: none;
+  border-radius: 50px;
+  padding: 0.6rem 1.2rem;
+  font-size: 0.95rem;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+  z-index: 1001; /* Asegura que pase por encima del ActionPanel que tiene 100 */
+  animation: pulse 2s infinite;
+  transition: transform 0.2s ease;
+}
+
+.floating-live-btn:hover {
+  transform: scale(1.05);
+}
+
+/* Animación de latido sutil */
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(211, 47, 47, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0); }
+}
+
+@media (max-width: 600px) {
+  .floating-live-btn {
+    top: 10px;
+    right: 10px;
+    font-size: 0.85rem;
+    padding: 0.5rem 1rem;
+  }
 }
 </style>

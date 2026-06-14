@@ -6,7 +6,7 @@ const redis = new Redis({
 })
 
 // Definimos el TTL deseado en segundos (Ej. 3600 = 1 hora)
-const CACHE_TTL_SECONDS = 900 
+const CACHE_TTL_SECONDS = 300 
 
 export const handler = async (event, context) => {
   try {

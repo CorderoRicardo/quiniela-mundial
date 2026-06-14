@@ -39,8 +39,8 @@ const formatCDMXTime = (unixTimestamp) => {
 </script>
 
 <template>
-  <div class="match-card" :class="{ 'has-selection': selectedOption }" v-if="show">
-    
+  <!-- <div class="match-card" :class="{ 'has-selection': selectedOption }" v-if="show"> -->
+  <div :id="`match-${matchId}`" class="match-card" :class="{ 'has-selection': selectedOption }" v-if="show">  
     <div class="match-meta">
       <span class="group-badge">{{ match.group }}</span>
       <span class="date-badge">📅 {{ formatCDMXTime(match.timestamp) }} (CDMX)</span>

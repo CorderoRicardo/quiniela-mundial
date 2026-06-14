@@ -23,10 +23,10 @@ const forwardPrediction = (data) => {
   <div class="match-list">
     <MatchCard 
       v-for="match in matches" 
-      :key="match.id" 
-      :match-id="match.id"
+      :key="match.match_id" 
+      :match-id="match.match_id"
       :match="match" 
-      :current-prediction="predictions[match.id]"
+      :current-prediction="predictions[match.match_id]"
       :show="match.group !== 'Fase Final'"
       @selection-changed="forwardPrediction"
     />

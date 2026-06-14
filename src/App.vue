@@ -3,7 +3,8 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import MatchList from './components/MatchList.vue'
 import ActionPanel from './components/ActionPanel.vue'
 
-const matchesData = ref({})
+// 1. Ahora inicializamos matchesData como un Array vacío [] en lugar de {}
+const matchesData = ref([])
 const userPredictions = reactive({})
 
 onMounted(async () => {
@@ -16,38 +17,32 @@ onMounted(async () => {
   }
 })
 
-// NUEVO 1: Computed property para ordenar por Grupo y luego por Timestamp
 const sortedMatches = computed(() => {
-  return Object.entries(matchesData.value)
-    // Convertimos el diccionario a un arreglo incluyendo el ID
-    .map(([id, match]) => ({ id, ...match })) 
-    .sort((a, b) => {
-      // 1. Ordenar por grupo alfabéticamente (Ej. Grupo A -> Grupo B)
-      if (a.group < b.group) return -1;
-      if (a.group > b.group) return 1;
-      // 2. Si son del mismo grupo, ordenar por fecha/hora (timestamp)
-      return a.timestamp - b.timestamp;
-    });
+  // 2. Como ya es un Array, ya no necesitamos Object.entries. 
+  // Clonamos el array con [...matchesData.value] para no mutar el original y lo ordenamos.
+  return [...matchesData.value].sort((a, b) => {
+    if (a.group < b.group) return -1;
+    if (a.group > b.group) return 1;
+    return a.timestamp - b.timestamp;
+  });
 })
 
 const totalScore = computed(() => {
   let points = 0
-  for (const matchId in userPredictions) {
-    const match = matchesData.value[matchId]
-    if (match && match.status === 'FINISHED' && userPredictions[matchId] === match.result) {
+  for (const predictionId in userPredictions) {
+    // 3. En lugar de acceso directo por índice, buscamos el partido por su match_id
+    const match = matchesData.value.find(m => m.match_id === predictionId)
+    
+    if (match && match.status === 'FINISHED' && userPredictions[predictionId] === match.result) {
       points++
     }
   }
   return points
 })
 
-const handlePredictionUpdate = ({ matchId, prediction }) => {
-  userPredictions[matchId] = prediction
-}
-
-// NUEVO 2: Función para mostrar la fecha de actualización de la API
 const showLastUpdated = () => {
-  const firstMatch = Object.values(matchesData.value)[0]
+  // 4. Extraemos el primer elemento directamente del array
+  const firstMatch = matchesData.value[0]
   if (firstMatch && firstMatch.last_updated) {
     const date = new Date(firstMatch.last_updated)
     const formattedDate = new Intl.DateTimeFormat('es-MX', {

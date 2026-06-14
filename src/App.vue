@@ -3,36 +3,57 @@ import { ref, reactive, computed } from 'vue'
 import MatchList from './components/MatchList.vue'
 import ActionPanel from './components/ActionPanel.vue'
 
-// 1. Partidos a mostrar
-const matches = ref([
-  { id: 1, local: 'México', visitor: 'Polonia' },
-  { id: 2, local: 'Argentina', visitor: 'Arabia Saudita' },
-  { id: 3, local: 'Estados Unidos', visitor: 'Gales' }
-])
-
-// 2. Resultados reales simulados (Lo que vendrá de tu Netlify Function en la Fase 1)
-const realResults = ref({
-  1: 'Empate',
-  2: 'Visitante',
-  3: 'Empate'
+// Mock data: Contrato de la futura Netlify Function
+const matchesData = ref({
+  "1": {
+    "match_name": "MEX_vs_POL",
+    "timestamp": 1782259200,
+    "home_team": "México",
+    "away_team": "Polonia",
+    "home_goals": 0,
+    "away_goals": 0,
+    "status": "FINISHED",
+    "result": "Empate"
+  },
+  "2": {
+    "match_name": "ARG_vs_KSA",
+    "timestamp": 1782345600,
+    "home_team": "Argentina",
+    "away_team": "Arabia Saudita",
+    "home_goals": 1,
+    "away_goals": 2,
+    "status": "FINISHED",
+    "result": "Visitante"
+  },
+  "3": {
+    "match_name": "USA_vs_WAL",
+    "timestamp": 1782432000,
+    "home_team": "Estados Unidos",
+    "away_team": "Gales",
+    "home_goals": null,
+    "away_goals": null,
+    "status": "SCHEDULED",
+    "result": null
+  }
 })
 
-// 3. Estado de las predicciones del usuario
+// Estado de las predicciones del usuario
 const userPredictions = reactive({})
 
-// 4. Lógica de cálculo automático
+// Lógica de cálculo automático ajustada
 const totalScore = computed(() => {
   let points = 0
   for (const matchId in userPredictions) {
-    // Si la predicción coincide con el resultado real, sumamos 1 punto
-    if (userPredictions[matchId] === realResults.value[matchId]) {
+    const match = matchesData.value[matchId]
+    // Solo otorgamos puntos si el partido ya finalizó y la predicción es correcta
+    if (match && match.status === 'FINISHED' && userPredictions[matchId] === match.result) {
       points++
     }
   }
   return points
 })
 
-// 5. Manejadores de eventos
+// Manejadores de eventos
 const handlePredictionUpdate = ({ matchId, prediction }) => {
   userPredictions[matchId] = prediction
 }
@@ -51,7 +72,6 @@ const exportJSON = () => {
 }
 
 const importJSON = (importedData) => {
-  // Limpiamos las predicciones actuales y asignamos las nuevas
   for (const key in userPredictions) delete userPredictions[key]
   Object.assign(userPredictions, importedData)
   alert('¡Predicciones cargadas con éxito!')
@@ -75,33 +95,9 @@ const importJSON = (importedData) => {
     />
 
     <MatchList 
-      :matches="matches" 
+      :matches="matchesData" 
       :predictions="userPredictions"
       @update-prediction="handlePredictionUpdate" 
     />
   </main>
 </template>
-
-<style scoped>
-.container {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 2rem;
-  font-family: sans-serif;
-}
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 2px solid #eee;
-  padding-bottom: 1rem;
-}
-
-.score-board {
-  font-size: 1.5rem;
-  background-color: #ffeb3b;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-}
-</style>

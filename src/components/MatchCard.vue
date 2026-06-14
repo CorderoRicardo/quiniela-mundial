@@ -2,6 +2,10 @@
 import { ref, watch } from 'vue'
 
 const props = defineProps({
+  matchId: {
+    type: [String, Number],
+    required: true
+  },
   match: {
     type: Object,
     required: true
@@ -14,17 +18,15 @@ const props = defineProps({
 
 const emit = defineEmits(['selection-changed'])
 
-// Inicializamos la selección con el valor de la prop (si existe)
 const selectedOption = ref(props.currentPrediction)
 
-// Vigilamos si la prop cambia (ej. cuando se carga un JSON) para actualizar la UI
 watch(() => props.currentPrediction, (newValue) => {
   selectedOption.value = newValue || ''
 })
 
 const onSelection = () => {
   emit('selection-changed', {
-    matchId: props.match.id,
+    matchId: props.matchId,
     prediction: selectedOption.value
   })
 }
@@ -32,37 +34,46 @@ const onSelection = () => {
 
 <template>
   <div class="match-card">
+    <div class="match-header">
+      <span class="status finished" v-if="match.status === 'FINISHED'">Finalizado</span>
+      <span class="status scheduled" v-else>Próximamente</span>
+    </div>
+
     <div class="teams">
-      <span>{{ match.local }}</span>
-      <span> vs </span>
-      <span>{{ match.visitor }}</span>
+      <div class="team">
+        <span class="name">{{ match.home_team }}</span>
+        <span class="score" v-if="match.status === 'FINISHED'">{{ match.home_goals }}</span>
+      </div>
+      <span class="vs">vs</span>
+      <div class="team">
+        <span class="score" v-if="match.status === 'FINISHED'">{{ match.away_goals }}</span>
+        <span class="name">{{ match.away_team }}</span>
+      </div>
     </div>
     
     <div class="options">
       <label>
         <input 
           type="radio" 
-          :name="`match-${match.id}`" 
+          :name="`match-${matchId}`" 
           value="Local" 
           v-model="selectedOption"
           @change="onSelection"
         > Local
       </label>
-      
       <label>
         <input 
           type="radio" 
-          :name="`match-${match.id}`" 
+          :name="`match-${matchId}`" 
           value="Empate" 
           v-model="selectedOption"
           @change="onSelection"
         > Empate
       </label>
-      
       <label>
         <input 
           type="radio" 
-          :name="`match-${match.id}`" 
+          :name="`match-${matchId}`" 
           value="Visitante" 
           v-model="selectedOption"
           @change="onSelection"
@@ -75,24 +86,67 @@ const onSelection = () => {
 <style scoped>
 .match-card {
   border: 1px solid #ccc;
-  padding: 1rem;
+  padding: 1.5rem;
   border-radius: 8px;
-  background-color: #f9f9f9;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
-.teams {
-  font-weight: bold;
-  font-size: 1.2rem;
-  margin-bottom: 1rem;
+.match-header {
   text-align: center;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.status.finished { color: #d32f2f; }
+.status.scheduled { color: #1976d2; }
+
+.teams {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  font-size: 1.2rem;
+}
+
+.team {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.team:first-child { justify-content: flex-end; }
+.team:last-child { justify-content: flex-start; }
+
+.score {
+  background-color: #333;
+  color: white;
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+.vs {
+  color: #888;
+  font-size: 0.9rem;
+  margin: 0 1rem;
 }
 
 .options {
   display: flex;
   justify-content: space-around;
+  background-color: #f5f5f5;
+  padding: 0.8rem;
+  border-radius: 4px;
 }
 
 label {
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
 }
 </style>

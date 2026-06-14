@@ -4,7 +4,8 @@ import { ref, watch } from 'vue'
 const props = defineProps({
   matchId: { type: [String, Number], required: true },
   match: { type: Object, required: true },
-  currentPrediction: { type: String, default: '' }
+  currentPrediction: { type: String, default: '' },
+  show: { type: Boolean, default: false}
 })
 
 const emit = defineEmits(['selection-changed'])
@@ -39,7 +40,7 @@ const formatCDMXTime = (unixTimestamp) => {
 </script>
 
 <template>
-  <div class="match-card">
+  <div class="match-card" v-if="show">
     
     <div class="match-meta">
       <span class="group-badge">{{ match.group }}</span>

@@ -3,7 +3,7 @@ import MatchCard from './MatchCard.vue'
 
 defineProps({
   matches: {
-    type: Object, // Cambiado de Array a Object
+    type: Array, // Cambiado de vuelta a Array para iterarlo ordenado
     required: true
   },
   predictions: {
@@ -22,11 +22,12 @@ const forwardPrediction = (data) => {
 <template>
   <div class="match-list">
     <MatchCard 
-      v-for="(match, id) in matches" 
-      :key="id" 
-      :match-id="id"
+      v-for="match in matches" 
+      :key="match.id" 
+      :match-id="match.id"
       :match="match" 
-      :current-prediction="predictions[id]"
+      :current-prediction="predictions[match.id]"
+      :show="match.group !== 'Fase Final'"
       @selection-changed="forwardPrediction"
     />
   </div>

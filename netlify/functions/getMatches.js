@@ -67,7 +67,8 @@ export const handler = async (event, context) => {
         home_goals: match.score.fullTime.home ?? null,
         away_goals: match.score.fullTime.away ?? null,
         status: match.status,
-        result: resultStr
+        result: resultStr,
+        last_updated: match.lastUpdated
       }
     })
 

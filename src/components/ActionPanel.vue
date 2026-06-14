@@ -36,8 +36,19 @@ const handleFileUpload = (event) => {
 .action-panel {
   display: flex;
   gap: 1rem;
-  margin-top: 2rem;
   justify-content: center;
+  
+  /* NUEVO: Lógica de Sticky Header */
+  position: sticky;
+  top: 0; /* Se pegará en la parte superior del contenedor */
+  z-index: 100; /* Asegura que pase por encima de las tarjetas */
+  padding: 1rem 0; /* Espaciado para que se vea limpio */
+  
+  /* Efecto translúcido moderno */
+  background-color: rgba(255, 255, 255, 0.9); 
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid #eaeaea;
+  margin-bottom: 1rem;
 }
 
 .btn {

@@ -3,65 +3,37 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import MatchList from './components/MatchList.vue'
 import ActionPanel from './components/ActionPanel.vue'
 
-// Mock data: Contrato de la futura Netlify Function
-// const matchesData = ref({
-//   "1": {
-//     "match_name": "MEX_vs_POL",
-//     "timestamp": 1782259200,
-//     "home_team": "México",
-//     "away_team": "Polonia",
-//     "home_goals": 0,
-//     "away_goals": 0,
-//     "status": "FINISHED",
-//     "result": "Empate"
-//   },
-//   "2": {
-//     "match_name": "ARG_vs_KSA",
-//     "timestamp": 1782345600,
-//     "home_team": "Argentina",
-//     "away_team": "Arabia Saudita",
-//     "home_goals": 1,
-//     "away_goals": 2,
-//     "status": "FINISHED",
-//     "result": "Visitante"
-//   },
-//   "3": {
-//     "match_name": "USA_vs_WAL",
-//     "timestamp": 1782432000,
-//     "home_team": "Estados Unidos",
-//     "away_team": "Gales",
-//     "home_goals": null,
-//     "away_goals": null,
-//     "status": "SCHEDULED",
-//     "result": null
-//   }
-// })
-
-// Inicializamos el objeto vacío
 const matchesData = ref({})
+const userPredictions = reactive({})
 
-// Al cargar el componente, llamamos a la Netlify Function
 onMounted(async () => {
   try {
     const response = await fetch('/.netlify/functions/getMatches')
     const data = await response.json()
     matchesData.value = data
-    console.log(Object.keys(data).length);
-
   } catch (error) {
     console.error("Error obteniendo los resultados:", error)
   }
 })
 
-// Estado de las predicciones del usuario
-const userPredictions = reactive({})
+// NUEVO 1: Computed property para ordenar por Grupo y luego por Timestamp
+const sortedMatches = computed(() => {
+  return Object.entries(matchesData.value)
+    // Convertimos el diccionario a un arreglo incluyendo el ID
+    .map(([id, match]) => ({ id, ...match })) 
+    .sort((a, b) => {
+      // 1. Ordenar por grupo alfabéticamente (Ej. Grupo A -> Grupo B)
+      if (a.group < b.group) return -1;
+      if (a.group > b.group) return 1;
+      // 2. Si son del mismo grupo, ordenar por fecha/hora (timestamp)
+      return a.timestamp - b.timestamp;
+    });
+})
 
-// Lógica de cálculo automático ajustada
 const totalScore = computed(() => {
   let points = 0
   for (const matchId in userPredictions) {
     const match = matchesData.value[matchId]
-    // Solo otorgamos puntos si el partido ya finalizó y la predicción es correcta
     if (match && match.status === 'FINISHED' && userPredictions[matchId] === match.result) {
       points++
     }
@@ -69,21 +41,35 @@ const totalScore = computed(() => {
   return points
 })
 
-// Manejadores de eventos
 const handlePredictionUpdate = ({ matchId, prediction }) => {
   userPredictions[matchId] = prediction
+}
+
+// NUEVO 2: Función para mostrar la fecha de actualización de la API
+const showLastUpdated = () => {
+  const firstMatch = Object.values(matchesData.value)[0]
+  if (firstMatch && firstMatch.last_updated) {
+    const date = new Date(firstMatch.last_updated)
+    const formattedDate = new Intl.DateTimeFormat('es-MX', {
+      timeZone: 'America/Mexico_City',
+      dateStyle: 'long', 
+      timeStyle: 'medium'
+    }).format(date)
+    
+    alert(`Última actualización de resultados reales:\n🗓️ ${formattedDate} (Tiempo de CDMX)`)
+  } else {
+    alert('Información de actualización aún no disponible.')
+  }
 }
 
 const exportJSON = () => {
   const dataStr = JSON.stringify(userPredictions, null, 2)
   const blob = new Blob([dataStr], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
-  
   const link = document.createElement('a')
   link.href = url
   link.download = 'mis_predicciones_mundial.json'
   link.click()
-  
   URL.revokeObjectURL(url)
 }
 
@@ -97,13 +83,19 @@ const importJSON = (importedData) => {
 <template>
   <main class="container">
     <header class="header">
-      <h1>Quiniela Mundial 2026</h1>
+      <div class="title-container">
+        <h1>Quiniela Mundial 2026</h1>
+        <button class="info-btn" @click="showLastUpdated" title="Ver última actualización">
+          ℹ️ Info
+        </button>
+      </div>
+      
       <div class="score-board">
         Puntos: <strong>{{ totalScore }}</strong>
       </div>
     </header>
     
-    <p>Selecciona tus pronósticos para la fase de grupos.</p>
+    <p class="subtitle">Selecciona tus pronósticos para la fase de grupos.</p>
     
     <ActionPanel 
       @export-predictions="exportJSON"
@@ -111,9 +103,53 @@ const importJSON = (importedData) => {
     />
 
     <MatchList 
-      :matches="matchesData" 
+      :matches="sortedMatches" 
       :predictions="userPredictions"
       @update-prediction="handlePredictionUpdate" 
     />
   </main>
 </template>
+
+<style scoped>
+/* Conserva tus estilos existentes de .container, .header, .score-board... */
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+  font-family: sans-serif;
+}
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #eee;
+  padding-bottom: 1rem;
+}
+.title-container {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.score-board {
+  font-size: 1.5rem;
+  background-color: #ffeb3b;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+}
+.subtitle {
+  margin-top: 1rem;
+}
+.info-btn {
+  background: none;
+  border: 1px solid #ccc;
+  border-radius: 20px;
+  padding: 0.2rem 0.8rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  background-color: #f5f5f5;
+  transition: all 0.2s;
+}
+.info-btn:hover {
+  background-color: #e0e0e0;
+}
+</style>

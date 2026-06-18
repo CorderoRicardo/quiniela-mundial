@@ -1,18 +1,19 @@
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+// NUEVO: Importamos 'watch' de vue
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import MatchList from './components/MatchList.vue'
 import ActionPanel from './components/ActionPanel.vue'
 
 const matchesData = ref([])
 const userPredictions = reactive({})
 const lastCacheUpdate = ref(null) 
-
-// NUEVO: Estado para saber si estamos recargando los datos
 const isReloading = ref(false)
 
-// NUEVO: Extraemos la petición fetch a una función reutilizable
+// NUEVO: Definimos una llave constante para el localStorage
+const LOCAL_STORAGE_KEY = 'quiniela_predicciones_2026'
+
 const loadMatches = async () => {
-  if (isReloading.value) return // Previene múltiples clics
+  if (isReloading.value) return 
   isReloading.value = true
   
   try {
@@ -28,9 +29,26 @@ const loadMatches = async () => {
   }
 }
 
-// Al montar el componente, llamamos a la función de carga
 onMounted(() => {
   loadMatches()
+
+  // NUEVO 1: Al cargar la página, verificamos si hay datos guardados previamente
+  const savedData = localStorage.getItem(LOCAL_STORAGE_KEY)
+  if (savedData) {
+    try {
+      const parsedData = JSON.parse(savedData)
+      Object.assign(userPredictions, parsedData)
+    } catch (error) {
+      console.error("Error al leer el localStorage:", error)
+    }
+  }
+})
+
+// NUEVO 2: Vigilamos el objeto userPredictions. 
+// Cada vez que el usuario hace clic en un Radio Button o sube un JSON, 
+// esta función se dispara silenciosamente y guarda en el navegador.
+watch(userPredictions, (newPredictions) => {
+  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(newPredictions))
 })
 
 const sortedMatches = computed(() => {
@@ -102,6 +120,8 @@ const importJSON = (importedData) => {
   for (const key in userPredictions) delete userPredictions[key]
   Object.assign(userPredictions, importedData)
   alert('¡Predicciones cargadas con éxito!')
+  // Nota: Como estamos mutando userPredictions con Object.assign, 
+  // el "watch" detectará este cambio y también actualizará el localStorage automáticamente.
 }
 </script>
 

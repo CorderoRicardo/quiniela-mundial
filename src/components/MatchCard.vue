@@ -192,4 +192,58 @@ label {
   font-weight: 500;
   color: #444;
 }
+
+@media (max-width: 600px) {
+  .match-card {
+    padding: 1rem; /* Menos espacio interior para aprovechar la pantalla */
+  }
+
+  .teams {
+    font-size: 0.9rem; /* Achicamos la fuente de los equipos */
+    gap: 0.2rem;
+  }
+
+  .team {
+    gap: 0.4rem; /* Juntamos más la bandera y el nombre */
+  }
+
+  .name {
+    /* Esta magia evita que nombres como "Bosnia-Herzegovina" rompan el layout */
+    max-width: 80px; 
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; 
+  }
+
+  .score {
+    padding: 0.2rem 0.5rem;
+    font-size: 1rem;
+    min-width: 15px;
+  }
+
+  .vs {
+    margin: 0 0.3rem; /* Reducimos el margen del 'vs' */
+    font-size: 0.8rem;
+  }
+
+  .options {
+    /* Convertimos la fila de botones en una columna apilada */
+    flex-direction: column; 
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background-color: transparent;
+    border: none;
+  }
+
+  .options label {
+    /* Convertimos cada opción en un botón grande y fácil de tapear */
+    width: 100%;
+    justify-content: center;
+    background-color: #f8f9fa;
+    padding: 0.8rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+  }
+}
 </style>

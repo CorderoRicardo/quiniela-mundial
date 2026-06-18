@@ -288,4 +288,20 @@ h1 {
     font-size: 1rem;
   }
 }
+
+@media (max-width: 600px) {
+  .container {
+    padding: 1rem 0.5rem; /* Reducimos el padding lateral en móviles */
+  }
+  
+  .header h1 {
+    font-size: 1.5rem; /* Hacemos el título un poco más pequeño */
+    text-align: center;
+  }
+  
+  .subtitle {
+    font-size: 0.9rem;
+    padding: 0 1rem;
+  }
+}
 </style>

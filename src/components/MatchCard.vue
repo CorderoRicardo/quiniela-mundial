@@ -73,7 +73,21 @@ const formatCDMXTime = (unixTimestamp) => {
       </div>
     </div>
     
-    </div>
+    <div class="options">
+      <label>
+        <input type="radio" :name="`match-${matchId}`" value="Local" v-model="selectedOption" @change="onSelection"> 
+        Local
+      </label>
+      <label>
+        <input type="radio" :name="`match-${matchId}`" value="Empate" v-model="selectedOption" @change="onSelection"> 
+        Empate
+      </label>
+      <label>
+        <input type="radio" :name="`match-${matchId}`" value="Visitante" v-model="selectedOption" @change="onSelection"> 
+        Visitante
+      </label>
+    </div>    
+  </div>
 </template>
 
 <style scoped>

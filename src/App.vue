@@ -85,6 +85,45 @@ const scrollToLiveMatch = () => {
   }
 }
 
+// NUEVO: Estado para llevar el control del partido actual de 'Hoy'
+const currentTodayIndex = ref(0)
+
+// NUEVO: Función principal de navegación
+const scrollToTodayMatch = () => {
+  // 1. Obtener la fecha de hoy en formato local (sin hora)
+  const today = new Date().toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City' })
+  
+  // 2. Filtrar todos los partidos que coincidan con la fecha de hoy
+  const todaysMatches = matchesData.value.filter(match => {
+    // Convertimos el timestamp del partido a fecha local para compararlos peras con peras
+    const matchDate = new Date(match.timestamp * 1000).toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City' })
+    return matchDate === today
+  })
+
+  // 3. Si no hay partidos hoy, avisamos al usuario y salimos de la función
+  if (todaysMatches.length === 0) {
+    alert("No hay partidos programados para el día de hoy.")
+    return
+  }
+
+  // 4. Si el índice actual se sale del rango (ya vimos el último partido), regresamos al inicio
+  if (currentTodayIndex.value >= todaysMatches.length) {
+    currentTodayIndex.value = 0
+  }
+
+  // 5. Obtenemos el partido específico hacia el cual queremos saltar
+  const targetMatch = todaysMatches[currentTodayIndex.value]
+
+  // 6. Ejecutamos el scroll suave
+  const element = document.getElementById(`match-${targetMatch.match_id}`)
+  if (element) {
+    element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
+
+  // 7. Aumentamos el índice para que el próximo clic vaya al siguiente partido
+  currentTodayIndex.value++
+}
+
 const handlePredictionUpdate = ({ matchId, prediction }) => {
   userPredictions[matchId] = prediction
 }
@@ -157,6 +196,7 @@ const importJSON = (importedData) => {
       @show-info="showLastUpdated"
       @export-predictions="exportJSON"
       @import-predictions="importJSON"
+      @scroll-to-today="scrollToTodayMatch" 
     />
 
     <MatchList 

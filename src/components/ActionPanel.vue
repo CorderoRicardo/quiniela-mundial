@@ -6,7 +6,8 @@ defineProps({
   }
 })
 
-const emit = defineEmits(['export-predictions', 'import-predictions', 'show-info'])
+// NUEVO: Añadimos 'scroll-to-today' a los emits
+const emit = defineEmits(['export-predictions', 'import-predictions', 'show-info', 'scroll-to-today'])
 
 const handleFileUpload = (event) => {
   const file = event.target.files[0]
@@ -37,6 +38,10 @@ const handleFileUpload = (event) => {
     </div>
 
     <div class="panel-right">
+      <button @click="$emit('scroll-to-today')" class="btn btn-secondary">
+        📅 Hoy
+      </button>
+
       <button @click="$emit('export-predictions')" class="btn">
         💾 Guardar
       </button>
@@ -117,6 +122,19 @@ const handleFileUpload = (event) => {
 }
 
 .btn:hover {
+  opacity: 0.9;
+}
+
+.btn-secondary {
+  background-color: #2196F3; /* Azul para diferenciarlo */
+  color: white;
+  border: none;
+  padding: 0.6rem 1rem;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+}
+.btn-secondary:hover {
   opacity: 0.9;
 }
 

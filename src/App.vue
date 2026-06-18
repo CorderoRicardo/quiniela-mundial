@@ -7,7 +7,14 @@ const matchesData = ref([])
 const userPredictions = reactive({})
 const lastCacheUpdate = ref(null) 
 
-onMounted(async () => {
+// NUEVO: Estado para saber si estamos recargando los datos
+const isReloading = ref(false)
+
+// NUEVO: Extraemos la petición fetch a una función reutilizable
+const loadMatches = async () => {
+  if (isReloading.value) return // Previene múltiples clics
+  isReloading.value = true
+  
   try {
     const response = await fetch('/.netlify/functions/getMatches')
     const data = await response.json()
@@ -15,7 +22,15 @@ onMounted(async () => {
     lastCacheUpdate.value = data.cache_date
   } catch (error) {
     console.error("Error obteniendo los resultados:", error)
+    alert("Hubo un error al actualizar los resultados.")
+  } finally {
+    isReloading.value = false
   }
+}
+
+// Al montar el componente, llamamos a la función de carga
+onMounted(() => {
+  loadMatches()
 })
 
 const sortedMatches = computed(() => {
@@ -37,17 +52,14 @@ const totalScore = computed(() => {
   return points
 })
 
-// NUEVO: Buscamos si existe al menos un partido 'EN JUEGO'
 const inPlayMatch = computed(() => {
   return matchesData.value.find(match => match.status === 'IN_PLAY')
 })
 
-// NUEVO: Función para desplazar la vista hacia la tarjeta
 const scrollToLiveMatch = () => {
   if (inPlayMatch.value) {
     const element = document.getElementById(`match-${inPlayMatch.value.match_id}`)
     if (element) {
-      // Usamos block: 'center' para que la tarjeta quede en medio de la pantalla
       element.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
   }
@@ -95,6 +107,15 @@ const importJSON = (importedData) => {
   <main class="container">
     
     <button 
+      class="floating-reload-btn" 
+      @click="loadMatches"
+      :disabled="isReloading"
+      title="Actualizar marcadores"
+    >
+      <span class="icon" :class="{ 'spin': isReloading }">🔄</span>
+    </button>
+
+    <button 
       v-if="inPlayMatch" 
       class="floating-live-btn" 
       @click="scrollToLiveMatch"
@@ -125,13 +146,13 @@ const importJSON = (importedData) => {
 </template>
 
 <style scoped>
-/* Estilos anteriores intactos */
+/* Estilos base del contenedor */
 .container {
   max-width: 800px;
   margin: 0 auto;
   padding: 2rem;
   font-family: sans-serif;
-  position: relative; /* Ayuda como contexto para z-index */
+  position: relative; 
 }
 .header {
   display: flex;
@@ -151,7 +172,55 @@ h1 {
   margin-bottom: 2rem;
 }
 
-/* NUEVO: Estilos del Botón Flotante */
+/* ==========================================
+   ESTILOS DE LOS BOTONES FLOTANTES
+============================================= */
+
+/* 1. Botón de Recarga (Nuevo - Izquierda) */
+.floating-reload-btn {
+  position: fixed;
+  top: 20px;
+  left: 20px; /* Lo anclamos a la esquina superior izquierda */
+  background-color: #ffffff;
+  color: #333;
+  border: 1px solid #ddd;
+  border-radius: 50%; /* Circular para que luzca como una app móvil */
+  width: 45px;
+  height: 45px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.2rem;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+  z-index: 1001; 
+  transition: transform 0.2s ease, background-color 0.2s, box-shadow 0.2s;
+}
+
+.floating-reload-btn:hover:not(:disabled) {
+  transform: scale(1.05);
+  background-color: #f9f9f9;
+  box-shadow: 0 6px 8px rgba(0,0,0,0.2);
+}
+
+.floating-reload-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Animación de rotación para la recarga */
+.icon {
+  display: inline-block;
+}
+.spin {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* 2. Botón En Vivo (Derecha) */
 .floating-live-btn {
   position: fixed;
   top: 20px;
@@ -165,7 +234,7 @@ h1 {
   font-weight: bold;
   cursor: pointer;
   box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-  z-index: 1001; /* Asegura que pase por encima del ActionPanel que tiene 100 */
+  z-index: 1001; 
   animation: pulse 2s infinite;
   transition: transform 0.2s ease;
 }
@@ -174,19 +243,27 @@ h1 {
   transform: scale(1.05);
 }
 
-/* Animación de latido sutil */
 @keyframes pulse {
   0% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.7); }
   70% { box-shadow: 0 0 0 10px rgba(211, 47, 47, 0); }
   100% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0); }
 }
 
+/* Responsividad para pantallas pequeñas (móviles) */
 @media (max-width: 600px) {
   .floating-live-btn {
     top: 10px;
     right: 10px;
     font-size: 0.85rem;
     padding: 0.5rem 1rem;
+  }
+  
+  .floating-reload-btn {
+    top: 10px;
+    left: 10px;
+    width: 38px;
+    height: 38px;
+    font-size: 1rem;
   }
 }
 </style>

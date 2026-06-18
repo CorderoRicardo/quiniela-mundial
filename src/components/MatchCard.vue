@@ -39,8 +39,8 @@ const formatCDMXTime = (unixTimestamp) => {
 </script>
 
 <template>
-  <!-- <div class="match-card" :class="{ 'has-selection': selectedOption }" v-if="show"> -->
-  <div :id="`match-${matchId}`" class="match-card" :class="{ 'has-selection': selectedOption }" v-if="show">  
+  <div :id="`match-${matchId}`" class="match-card" :class="{ 'has-selection': selectedOption }" v-if="show">
+    
     <div class="match-meta">
       <span class="group-badge">{{ match.group }}</span>
       <span class="date-badge">📅 {{ formatCDMXTime(match.timestamp) }} (CDMX)</span>
@@ -49,6 +49,7 @@ const formatCDMXTime = (unixTimestamp) => {
     <div class="match-header">
       <span class="status finished" v-if="match.status === 'FINISHED'">Finalizado</span>
       <span class="status in-play" v-else-if="match.status === 'IN_PLAY'">En Juego</span>
+      <span class="status in-pause" v-else-if="match.status === 'IN_PAUSE'">Medio Tiempo</span>
       <span class="status scheduled" v-else>Próximamente</span>
     </div>
 
@@ -56,7 +57,7 @@ const formatCDMXTime = (unixTimestamp) => {
       <div class="team home">
         <span class="name">{{ match.home_team }}</span>
         <img v-if="match.home_crest" :src="match.home_crest" class="flag" :alt="match.home_team">
-        <span class="score" v-if="match.status === 'FINISHED' || match.status === 'IN_PLAY'">
+        <span class="score" v-if="match.status === 'FINISHED' || match.status === 'IN_PLAY' || match.status === 'IN_PAUSE'">
           {{ match.home_goals ?? 0 }}
         </span>
       </div>
@@ -64,7 +65,7 @@ const formatCDMXTime = (unixTimestamp) => {
       <span class="vs">vs</span>
       
       <div class="team away">
-        <span class="score" v-if="match.status === 'FINISHED' || match.status === 'IN_PLAY'">
+        <span class="score" v-if="match.status === 'FINISHED' || match.status === 'IN_PLAY' || match.status === 'IN_PAUSE'">
           {{ match.away_goals ?? 0 }}
         </span>
         <img v-if="match.away_crest" :src="match.away_crest" class="flag" :alt="match.away_team">
@@ -72,21 +73,7 @@ const formatCDMXTime = (unixTimestamp) => {
       </div>
     </div>
     
-    <div class="options">
-      <label>
-        <input type="radio" :name="`match-${matchId}`" value="Local" v-model="selectedOption" @change="onSelection"> 
-        Local
-      </label>
-      <label>
-        <input type="radio" :name="`match-${matchId}`" value="Empate" v-model="selectedOption" @change="onSelection"> 
-        Empate
-      </label>
-      <label>
-        <input type="radio" :name="`match-${matchId}`" value="Visitante" v-model="selectedOption" @change="onSelection"> 
-        Visitante
-      </label>
     </div>
-  </div>
 </template>
 
 <style scoped>
@@ -136,6 +123,7 @@ const formatCDMXTime = (unixTimestamp) => {
 .status.finished { color: #d32f2f; }
 .status.in-play { color: #2e7d32; }
 .status.scheduled { color: #1976d2; }
+.status.in-pause { color: #f57c00; } /* Tono naranja/ámbar para el medio tiempo */
 
 .teams {
   display: flex;
@@ -174,9 +162,10 @@ const formatCDMXTime = (unixTimestamp) => {
   text-align: center;
 }
 
-/* El marcador es verde si está en juego */
-.status.in-play + .teams .score {
-  background-color: #2e7d32;
+/* Modificamos el selector para que el marcador se mantenga verde o cambie a naranja */
+.status.in-play + .teams .score,
+.status.in-pause + .teams .score {
+  background-color: #2e7d32; 
 }
 
 .vs {

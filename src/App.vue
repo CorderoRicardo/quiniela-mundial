@@ -53,7 +53,9 @@ const totalScore = computed(() => {
 })
 
 const inPlayMatch = computed(() => {
-  return matchesData.value.find(match => match.status === 'IN_PLAY')
+  return matchesData.value.find(match => 
+    match.status === 'IN_PLAY' || match.status === 'IN_PAUSE'
+  )
 })
 
 const scrollToLiveMatch = () => {

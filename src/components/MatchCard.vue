@@ -48,8 +48,8 @@ const formatCDMXTime = (unixTimestamp) => {
 
     <div class="match-header">
       <span class="status finished" v-if="match.status === 'FINISHED'">Finalizado</span>
-      <span class="status in-play" v-else-if="match.status === 'IN_PLAY'">En Juego</span>
-      <span class="status in-pause" v-else-if="match.status === 'IN_PAUSE'">Medio Tiempo</span>
+      <span class="status in-play" v-else-if="match.status === 'IN_PLAY' || match.status === 'LIVE'">En Juego</span>
+      <span class="status in-pause" v-else-if="match.status === 'IN_PAUSE' || match.status === 'PAUSED'">Medio Tiempo</span>
       <span class="status scheduled" v-else>Próximamente</span>
     </div>
 

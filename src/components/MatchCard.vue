@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 
 const props = defineProps({
   matchId: { type: [String, Number], required: true },
@@ -36,6 +36,18 @@ const formatCDMXTime = (unixTimestamp) => {
     hour12: true
   }).format(date)
 }
+
+const showScore = computed(()=>{
+  return (status) => {
+    return (
+        status === 'FINISHED' ||
+        status === 'LIVE' || 
+        status === 'IN_PLAY' || 
+        status === 'IN_PAUSE' || 
+        status === 'PAUSED'
+    )
+  }
+})
 </script>
 
 <template>
@@ -57,7 +69,8 @@ const formatCDMXTime = (unixTimestamp) => {
       <div class="team home">
         <span class="name">{{ match.home_team }}</span>
         <img v-if="match.home_crest" :src="match.home_crest" class="flag" :alt="match.home_team">
-        <span class="score" v-if="match.status === 'FINISHED' || match.status === 'IN_PLAY' || match.status === 'IN_PAUSE'">
+        <span class="score" 
+          v-if="showScore(match.status)">
           {{ match.home_goals ?? 0 }}
         </span>
       </div>
@@ -65,7 +78,7 @@ const formatCDMXTime = (unixTimestamp) => {
       <span class="vs">vs</span>
       
       <div class="team away">
-        <span class="score" v-if="match.status === 'FINISHED' || match.status === 'IN_PLAY' || match.status === 'IN_PAUSE'">
+        <span class="score" v-if="showScore(match.status)">
           {{ match.away_goals ?? 0 }}
         </span>
         <img v-if="match.away_crest" :src="match.away_crest" class="flag" :alt="match.away_team">

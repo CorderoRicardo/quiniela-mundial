@@ -72,7 +72,10 @@ const totalScore = computed(() => {
 
 const inPlayMatch = computed(() => {
   return matchesData.value.find(match => 
-    match.status === 'IN_PLAY' || match.status === 'IN_PAUSE'
+    match.status === 'IN_PLAY' || 
+    match.status === 'IN_PAUSE' ||
+    match.status === 'LIVE' ||
+    match.status === 'PAUSED'
   )
 })
 
@@ -285,8 +288,8 @@ h1 {
 /* 2. Botón En Vivo (Derecha) */
 .floating-live-btn {
   position: fixed;
-  top: 20px;
-  right: 20px;
+  bottom: 20px;
+  left: 20px;
   background-color: #d32f2f;
   color: white;
   border: none;

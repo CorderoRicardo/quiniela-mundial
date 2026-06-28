@@ -317,8 +317,8 @@ h1 {
 /* Responsividad para pantallas pequeñas (móviles) */
 @media (max-width: 600px) {
   .floating-live-btn {
-    top: 10px;
-    right: 10px;
+    bottom: 10px;
+    left: 10px;
     font-size: 0.85rem;
     padding: 0.5rem 1rem;
   }

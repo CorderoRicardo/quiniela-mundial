@@ -65,6 +65,16 @@ export const handler = async (event, context) => {
     // 4. Transformar y normalizar los datos al contrato del frontend
     const formattedData = []
 
+    // NUEVO: Diccionario para traducir las etapas de la API al español
+    const stageTranslations = {
+      'LAST_32': '16avos de Final',
+      'LAST_16': 'Octavos de Final',
+      'QUARTER_FINALS': 'Cuartos de Final',
+      'SEMI_FINALS': 'Semifinales',
+      'THIRD_PLACE': 'Tercer Lugar',
+      'FINAL': 'Final'
+    }
+
     rawData.matches.forEach(match => {
       const homeCode = match.homeTeam?.tla || 'TBD'
       const awayCode = match.awayTeam?.tla || 'TBD'
@@ -72,10 +82,22 @@ export const handler = async (event, context) => {
       const awayName = match.awayTeam?.name || 'Por definir'
       const homeCrest = match.homeTeam?.crest || ''
       const awayCrest = match.awayTeam?.crest || ''
-      const groupName = match.group ? match.group.replace('GROUP_', 'Grupo ') : 'Fase Final'
+
+      // NUEVO: Lógica de transformación para mostrar Fase de Grupos o Eliminatorias
+      let displayStage = 'Fase Final'
+      if (match.stage === 'GROUP_STAGE' && match.group) {
+        displayStage = match.group.replace('GROUP_', 'Grupo ')
+      } else if (stageTranslations[match.stage]) {
+        displayStage = stageTranslations[match.stage]
+      } else {
+        displayStage = match.stage || 'Fase Final'
+      }
 
       let resultStr = null
       if (match.status === 'FINISHED') {
+        // Nota: football-data.org incluye los penales en "score.penalties" si los hay, 
+        // pero la regla general para quinielas evalúa el tiempo regular + prórroga.
+        // FullTime incluye el marcador final oficial.
         const homeGoals = match.score.fullTime.home
         const awayGoals = match.score.fullTime.away
         if (homeGoals > awayGoals) resultStr = 'Local'
@@ -87,7 +109,10 @@ export const handler = async (event, context) => {
         match_id: String(match.id),
         match_name: `${homeCode}_vs_${awayCode}`,
         timestamp: Math.floor(new Date(match.utcDate).getTime() / 1000),
-        group: groupName,
+        
+        // Reemplazamos la extracción antigua por nuestra nueva variable dinámica
+        group: displayStage, 
+        
         home_crest: homeCrest,
         away_crest: awayCrest,
         home_team: homeName,
